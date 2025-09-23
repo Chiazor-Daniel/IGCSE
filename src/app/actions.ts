@@ -4,16 +4,17 @@
 import {
   generateIgcseQuestions,
   type GenerateIgcseQuestionsInput,
+  type GenerateIgcseQuestionsOutput,
 } from "@/ai/flows/generate-igcse-questions";
 import type { FormSchema } from "./form-schema";
 
 
 export async function generateQuestionsAction(values: FormSchema) {
   try {
-    const result = await generateIgcseQuestions(
+    const result: GenerateIgcseQuestionsOutput = await generateIgcseQuestions(
       values as GenerateIgcseQuestionsInput
     );
-    if (!result.questions || result.questions.trim() === "") {
+    if (!result.questions || result.questions.length === 0) {
       return {
         success: false,
         error: "The AI returned an empty response. Please try again.",
@@ -30,3 +31,5 @@ export async function generateQuestionsAction(values: FormSchema) {
     };
   }
 }
+
+    

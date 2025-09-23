@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {generateDiagramsForQuestions} from './generate-diagrams-for-questions';
 
 const GenerateIgcseQuestionsInputSchema = z.object({
   subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']).describe('The subject for which to generate questions.'),
@@ -18,8 +19,13 @@ const GenerateIgcseQuestionsInputSchema = z.object({
 });
 export type GenerateIgcseQuestionsInput = z.infer<typeof GenerateIgcseQuestionsInputSchema>;
 
+const QuestionSchema = z.object({
+  questionText: z.string(),
+  diagramDescription: z.string().nullable(),
+});
+
 const GenerateIgcseQuestionsOutputSchema = z.object({
-  questions: z.string().describe('The generated IGCSE questions.'),
+  questions: z.array(QuestionSchema),
 });
 export type GenerateIgcseQuestionsOutput = z.infer<typeof GenerateIgcseQuestionsOutputSchema>;
 
@@ -29,13 +35,25 @@ export async function generateIgcseQuestions(input: GenerateIgcseQuestionsInput)
 
 const prompt = ai.definePrompt({
   name: 'generateIgcseQuestionsPrompt',
-  input: {schema: GenerateIgcseQuestionsInputSchema},
-  output: {schema: GenerateIgcseQuestionsOutputSchema},
+  input: {
+    schema: z.object({
+      subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']),
+      questionType: z.enum(['MCQ', 'Theory']),
+      numberOfQuestions: z.number(),
+    }),
+  },
+  output: {
+    schema: z.object({
+      questions: z.array(z.string()).describe('An array of generated question strings.'),
+    }),
+  },
   prompt: `You are an expert IGCSE exam question generator. Your task is to produce infinite, high-quality questions based on the provided subject-specific analysis.
 
-You will generate 10 {{questionType}} questions for {{subject}}.
+You will generate {{numberOfQuestions}} {{questionType}} questions for {{subject}}.
 
-Use the following analysis as a blueprint. Randomize elements like numbers, scenarios, and options, but maintain educational validity and alignment with O-Level Cambridge-style exams.
+For theory questions, ensure they are rich, multi-part questions that require detailed explanations and real-world context where applicable.
+
+For all questions, provide a text description for a "clean, neat, exam-standard" diagram where appropriate. If no diagram is needed for a specific question, that's okay.
 
 ### 1. **MATHEMATICS**
    - **Overview**: Contains 2 papers (one objectives from 2003, one theory from 2024). Focuses on O-Level Syllabus D (4024). Questions cover algebra, geometry, trigonometry, statistics, and real-world applications (e.g., time zones, currency conversion).
@@ -90,9 +108,9 @@ Use the following analysis as a blueprint. Randomize elements like numbers, scen
   - **Real-World Contexts**: Time zones, ecosystems, alloys, fuels.
 - **Generation Guidelines**:
   - **Variety**: For {{questionType}}, generate appropriate questions. MCQs must have 4 options (A,B,C,D) with one correct answer.
-  - **Output Format**: Question text + options (for MCQ) or space for answer (theory) + mark scheme/explanation. For visuals, describe them in text.
+  - **Output Format**: For each question, just provide the question text, including any multiple choice options. Do not include answers or mark schemes.
 
-Output the questions in a clear, formatted way.`, 
+Output the questions as a JSON array of strings.`,
   config: {
     safetySettings: [
       {
@@ -122,7 +140,29 @@ const generateIgcseQuestionsFlow = ai.defineFlow(
     outputSchema: GenerateIgcseQuestionsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    const numberOfQuestions = input.questionType === 'MCQ' ? 40 : 10;
+    const {output} = await prompt({...input, numberOfQuestions});
+
+    if (!output || !output.questions) {
+      return {questions: []};
+    }
+
+    // Now, for each question, generate a diagram.
+    const questionsWithDiagrams = await Promise.all(
+      output.questions.map(async (question: string) => {
+        const diagramResult = await generateDiagramsForQuestions({
+          ...input,
+          question: question,
+        });
+        return {
+          questionText: question,
+          diagramDescription: diagramResult.diagramDescription,
+        };
+      })
+    );
+
+    return {questions: questionsWithDiagrams};
   }
 );
+
+    

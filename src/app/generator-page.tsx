@@ -15,10 +15,11 @@ import type { FormSchema } from "./form-schema";
 import { generateQuestionsAction } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import type { GenerateIgcseQuestionsOutput } from "@/ai/flows/generate-igcse-questions";
 
 export default function GeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [questions, setQuestions] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<GenerateIgcseQuestionsOutput['questions'] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -63,3 +64,5 @@ export default function GeneratorPage() {
     </SidebarProvider>
   );
 }
+
+    
