@@ -11,7 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {generateDiagramsForQuestions} from './generate-diagrams-for-questions';
+import {generateDiagramForQuestion} from './generate-diagrams-for-questions';
 
 const GenerateIgcseQuestionsInputSchema = z.object({
   subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']).describe('The subject for which to generate questions.'),
@@ -21,7 +21,7 @@ export type GenerateIgcseQuestionsInput = z.infer<typeof GenerateIgcseQuestionsI
 
 const QuestionSchema = z.object({
   questionText: z.string(),
-  diagramDescription: z.string().nullable(),
+  diagramUrl: z.string().nullable(),
 });
 
 const GenerateIgcseQuestionsOutputSchema = z.object({
@@ -147,16 +147,15 @@ const generateIgcseQuestionsFlow = ai.defineFlow(
       return {questions: []};
     }
 
-    // Now, for each question, generate a diagram.
+    // Now, for each question, generate a diagram in parallel.
     const questionsWithDiagrams = await Promise.all(
       output.questions.map(async (question: string) => {
-        const diagramResult = await generateDiagramsForQuestions({
-          ...input,
+        const diagramResult = await generateDiagramForQuestion({
           question: question,
         });
         return {
           questionText: question,
-          diagramDescription: diagramResult.diagramDescription,
+          diagramUrl: diagramResult.diagramUrl,
         };
       })
     );
@@ -164,5 +163,3 @@ const generateIgcseQuestionsFlow = ai.defineFlow(
     return {questions: questionsWithDiagrams};
   }
 );
-
-    

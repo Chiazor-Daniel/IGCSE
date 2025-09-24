@@ -16,9 +16,9 @@ import {
   FlaskConical,
   Loader2,
   AlertTriangle,
-  Image as ImageIcon,
 } from "lucide-react";
 import type { GenerateIgcseQuestionsOutput } from "@/ai/flows/generate-igcse-questions";
+import Image from 'next/image';
 
 type QuestionDisplayProps = {
   questions: GenerateIgcseQuestionsOutput['questions'] | null;
@@ -105,16 +105,16 @@ export function QuestionDisplay({
                 <p className="font-code whitespace-pre-wrap text-sm text-secondary-foreground">
                   {q.questionText}
                 </p>
-                {q.diagramDescription && q.diagramDescription.toLowerCase() !== 'null' && (
-                   <Card className="mt-4">
-                     <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-2">
-                       <ImageIcon className="size-4 text-muted-foreground" />
-                       <CardTitle className="text-sm font-medium">Diagram Description</CardTitle>
-                     </CardHeader>
-                     <CardContent>
-                       <p className="text-sm text-muted-foreground">{q.diagramDescription}</p>
-                     </CardContent>
-                   </Card>
+                {q.diagramUrl && (
+                   <div className="mt-4 overflow-hidden rounded-md">
+                      <Image
+                        src={q.diagramUrl}
+                        alt={`Diagram for question ${index + 1}`}
+                        width={500}
+                        height={300}
+                        className="object-contain"
+                      />
+                   </div>
                 )}
               </div>
             ))}
@@ -126,5 +126,3 @@ export function QuestionDisplay({
 
   return <WelcomeScreen />;
 }
-
-    

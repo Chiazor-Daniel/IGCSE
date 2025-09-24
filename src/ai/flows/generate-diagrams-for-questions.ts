@@ -4,53 +4,68 @@
 /**
  * @fileOverview Generates diagrams for exam questions.
  *
- * - generateDiagramsForQuestions - A function that generates diagrams for given questions.
- * - GenerateDiagramsForQuestionsInput - The input type for the generateDiagramsForQuestions function.
- * - GenerateDiagramsForQuestionsOutput - The return type for the generateDiagramsForQuestions function.
+ * - generateDiagramForQuestion - A function that generates a diagram for a given question.
+ * - GenerateDiagramForQuestionInput - The input type for the generateDiagramForQuestion function.
+ * - GenerateDiagramForQuestionOutput - The return type for the generateDiagramForQuestion function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateDiagramsForQuestionsInputSchema = z.object({
-  subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']).describe('The subject for which to generate diagrams.'),
-  questionType: z.enum(['MCQ', 'Theory']).describe('The type of question.'),
+const GenerateDiagramForQuestionInputSchema = z.object({
   question: z.string().describe('The question to generate a diagram for.'),
 });
-export type GenerateDiagramsForQuestionsInput = z.infer<typeof GenerateDiagramsForQuestionsInputSchema>;
+export type GenerateDiagramForQuestionInput = z.infer<
+  typeof GenerateDiagramForQuestionInputSchema
+>;
 
-const GenerateDiagramsForQuestionsOutputSchema = z.object({
-  diagramDescription: z.string().describe('A description of the diagram to include with the question, or null if no diagram is needed.'),
+const GenerateDiagramForQuestionOutputSchema = z.object({
+  diagramUrl: z
+    .string()
+    .nullable()
+    .describe('A data URI of the generated diagram, or null if no diagram is needed.'),
 });
-export type GenerateDiagramsForQuestionsOutput = z.infer<typeof GenerateDiagramsForQuestionsOutputSchema>;
+export type GenerateDiagramForQuestionOutput = z.infer<
+  typeof GenerateDiagramForQuestionOutputSchema
+>;
 
-export async function generateDiagramsForQuestions(input: GenerateDiagramsForQuestionsInput): Promise<GenerateDiagramsForQuestionsOutput> {
-  return generateDiagramsForQuestionsFlow(input);
+export async function generateDiagramForQuestion(
+  input: GenerateDiagramForQuestionInput
+): Promise<GenerateDiagramForQuestionOutput> {
+  return generateDiagramForQuestionFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateDiagramsForQuestionsPrompt',
-  input: {schema: GenerateDiagramsForQuestionsInputSchema},
-  output: {schema: GenerateDiagramsForQuestionsOutputSchema},
-  prompt: `You are an expert IGCSE exam question diagram generator.  You will generate a simple diagram to accompany the question if necessary.  If no diagram is necessary, respond with null.
-
-Subject: {{{subject}}}
-Question Type: {{{questionType}}}
+const diagramPrompt = ai.definePrompt({
+  name: 'diagramPrompt',
+  input: {schema: z.object({question: z.string()})},
+  output: {schema: z.object({isDiagramNeeded: z.boolean(), diagramPrompt: z.string().nullable()})},
+  prompt: `You are an expert at determining if a diagram is needed for an exam question and creating a prompt to generate it.
+The diagram should be a simple, clean, exam-standard diagram.
 Question: {{{question}}}
 
-Respond with a text description of the diagram that can be rendered using Matplotlib or described in text.
-
-If the question is not related to diagrams, respond with "null".`,
+First, determine if a diagram is necessary or would be helpful for this question.
+If so, provide a concise prompt for an image generation model to create a simple, clean, black and white, exam-standard diagram.
+If not, set isDiagramNeeded to false.`,
 });
 
-const generateDiagramsForQuestionsFlow = ai.defineFlow(
+
+const generateDiagramForQuestionFlow = ai.defineFlow(
   {
-    name: 'generateDiagramsForQuestionsFlow',
-    inputSchema: GenerateDiagramsForQuestionsInputSchema,
-    outputSchema: GenerateDiagramsForQuestionsOutputSchema,
+    name: 'generateDiagramForQuestionFlow',
+    inputSchema: GenerateDiagramForQuestionInputSchema,
+    outputSchema: GenerateDiagramForQuestionOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return {diagramDescription: output!.diagramDescription!};
+    const {output} = await diagramPrompt({question: input.question});
+    if (!output?.isDiagramNeeded || !output.diagramPrompt) {
+      return {diagramUrl: null};
+    }
+
+    const {media} = await ai.generate({
+      model: 'googleai/imagen-4.0-fast-generate-001',
+      prompt: output.diagramPrompt + ' - simple, clean, black and white, exam-standard, for a test paper',
+    });
+
+    return {diagramUrl: media.url};
   }
 );
