@@ -31,7 +31,7 @@ const WelcomeScreen = () => (
     <Card className="w-full max-w-2xl text-center">
       <CardHeader>
         <CardTitle className="font-headline text-3xl">
-          Welcome to the IGCSE Gemini Generator
+          Welcome to the IGCSE Exam Generator
         </CardTitle>
         <CardDescription>
           Select a subject and question type in the sidebar to get started.

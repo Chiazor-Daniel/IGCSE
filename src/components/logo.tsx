@@ -21,7 +21,7 @@ export function Logo() {
         </svg>
       </div>
       <h1 className="font-headline text-lg font-semibold tracking-tight">
-        IGCSE Generator
+        IGCSE Exam
       </h1>
     </div>
   );
