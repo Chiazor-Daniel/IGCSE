@@ -61,11 +61,18 @@ const generateDiagramForQuestionFlow = ai.defineFlow(
       return {diagramUrl: null};
     }
 
-    const {media} = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
-      prompt: output.diagramPrompt + ' - simple, clean, black and white, exam-standard, for a test paper',
-    });
-
-    return {diagramUrl: media.url};
+    try {
+      const {media} = await ai.generate({
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt:
+          output.diagramPrompt +
+          ' - simple, clean, black and white, exam-standard, for a test paper',
+      });
+      return {diagramUrl: media.url};
+    } catch (error) {
+      console.error('Error generating diagram:', error);
+      // If diagram generation fails, return null so question generation isn't blocked.
+      return {diagramUrl: null};
+    }
   }
 );
