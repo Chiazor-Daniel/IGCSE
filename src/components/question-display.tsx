@@ -26,39 +26,6 @@ type QuestionDisplayProps = {
   error: string | null;
 };
 
-const WelcomeScreen = () => (
-  <div className="flex flex-1 items-center justify-center">
-    <Card className="w-full max-w-2xl text-center">
-      <CardHeader>
-        <CardTitle className="font-headline text-3xl">
-          Welcome to the IGCSE Exam Generator
-        </CardTitle>
-        <CardDescription>
-          Select a subject and question type in the sidebar to get started.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-center gap-8 text-muted-foreground">
-        <div className="flex flex-col items-center gap-2">
-          <Calculator className="size-8" />
-          <span>Math</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <Leaf className="size-8" />
-          <span>Biology</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <Atom className="size-8" />
-          <span>Physics</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <FlaskConical className="size-8" />
-          <span>Chemistry</span>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-);
-
 const LoadingSpinner = () => (
   <div className="flex flex-1 flex-col items-center justify-center gap-4">
     <Loader2 className="size-12 animate-spin text-primary" />
@@ -124,5 +91,5 @@ export function QuestionDisplay({
     );
   }
 
-  return <WelcomeScreen />;
+  return null;
 }
