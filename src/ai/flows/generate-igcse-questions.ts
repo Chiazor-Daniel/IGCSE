@@ -33,6 +33,11 @@ export async function generateIgcseQuestions(input: GenerateIgcseQuestionsInput)
   return generateIgcseQuestionsFlow(input);
 }
 
+const PromptQuestionSchema = z.object({
+  questionText: z.string().describe('The full text of the question, including multiple choice options if applicable. This should NOT contain any diagram descriptions.'),
+  diagramPrompt: z.string().nullable().describe('A concise prompt for an image generation model to create a simple, clean, black and white, exam-standard diagram, if one is needed.'),
+});
+
 const prompt = ai.definePrompt({
   name: 'generateIgcseQuestionsPrompt',
   input: {
@@ -44,7 +49,7 @@ const prompt = ai.definePrompt({
   },
   output: {
     schema: z.object({
-      questions: z.array(z.string()).describe('An array of generated question strings.'),
+      questions: z.array(PromptQuestionSchema),
     }),
   },
   prompt: `You are an expert IGCSE exam question generator. Your task is to produce infinite, high-quality questions based on the provided subject-specific analysis.
@@ -53,7 +58,7 @@ You will generate {{numberOfQuestions}} {{questionType}} questions for {{subject
 
 For theory questions, ensure they are rich, multi-part questions that require detailed explanations and real-world context where applicable.
 
-For all questions, provide a text description for a "clean, neat, exam-standard" diagram where appropriate. If no diagram is needed for a specific question, that's okay.
+For each question, provide the question text. Separately, provide a text description for a "clean, neat, exam-standard" diagram in the 'diagramPrompt' field. If no diagram is needed, set 'diagramPrompt' to null.
 
 ### 1. **MATHEMATICS**
    - **Overview**: Contains 2 papers (one objectives from 2003, one theory from 2024). Focuses on O-Level Syllabus D (4024). Questions cover algebra, geometry, trigonometry, statistics, and real-world applications (e.g., time zones, currency conversion).
@@ -110,7 +115,7 @@ For all questions, provide a text description for a "clean, neat, exam-standard"
   - **Variety**: For {{questionType}}, generate appropriate questions. MCQs must have 4 options (A,B,C,D) with one correct answer.
   - **Output Format**: For each question, just provide the question text, including any multiple choice options. Do not include answers or mark schemes.
 
-Output the questions as a JSON array of strings.`,
+`,
   config: {
     safetySettings: [
       {
@@ -149,12 +154,12 @@ const generateIgcseQuestionsFlow = ai.defineFlow(
 
     // Now, for each question, generate a diagram in parallel.
     const questionsWithDiagrams = await Promise.all(
-      output.questions.map(async (question: string) => {
+      output.questions.map(async (q) => {
         const diagramResult = await generateDiagramForQuestion({
-          question: question,
+          diagramPrompt: q.diagramPrompt,
         });
         return {
-          questionText: question,
+          questionText: q.questionText,
           diagramUrl: diagramResult.diagramUrl,
         };
       })
