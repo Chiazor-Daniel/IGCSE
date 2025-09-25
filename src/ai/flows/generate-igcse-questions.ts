@@ -152,18 +152,13 @@ const generateIgcseQuestionsFlow = ai.defineFlow(
       return {questions: []};
     }
 
-    // Now, for each question, generate a diagram in parallel.
-    const questionsWithDiagrams = await Promise.all(
-      output.questions.map(async (q) => {
-        const diagramResult = await generateDiagramForQuestion({
-          diagramPrompt: q.diagramPrompt,
-        });
+    // Diagram generation is temporarily commented out.
+    const questionsWithDiagrams = output.questions.map((q) => {
         return {
           questionText: q.questionText,
-          diagramUrl: diagramResult.diagramUrl,
+          diagramUrl: null, // Always return null for the diagram URL
         };
-      })
-    );
+      });
 
     return {questions: questionsWithDiagrams};
   }
