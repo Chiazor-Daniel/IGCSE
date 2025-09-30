@@ -1,4 +1,3 @@
-
 // src/ai/flows/generate-igcse-questions.ts
 'use server';
 
@@ -12,7 +11,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {generateDiagramForQuestion} from './generate-diagrams-for-questions';
 
 const GenerateIgcseQuestionsInputSchema = z.object({
   subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']).describe('The subject for which to generate questions.'),
@@ -156,16 +154,13 @@ const generateIgcseQuestionsFlow = ai.defineFlow(
       return {questions: []};
     }
 
-    const questionsWithDiagrams = await Promise.all(
-      output.questions.map(async (q) => {
-        const diagramResult = await generateDiagramForQuestion({ diagramPrompt: q.diagramPrompt });
-        return {
-          questionType: q.questionType,
-          questionText: q.questionText,
-          diagramUrl: diagramResult.diagramUrl,
-        };
-      })
-    );
+    const questionsWithDiagrams = output.questions.map((q) => {
+      return {
+        questionType: q.questionType,
+        questionText: q.questionText,
+        diagramUrl: null, // Diagrams are temporarily disabled
+      };
+    });
 
     return {questions: questionsWithDiagrams};
   }
