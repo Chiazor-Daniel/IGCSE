@@ -5,6 +5,7 @@ import {
   generateIgcseQuestions,
   type GenerateIgcseQuestionsInput,
 } from "@/ai/flows/generate-igcse-questions";
+import { solveQuestion } from "@/ai/flows/solve-question";
 import type { FormSchema } from "./form-schema";
 
 
@@ -27,6 +28,19 @@ export async function generateQuestionsAction(values: FormSchema) {
       success: false,
       error:
         "An unexpected error occurred while generating questions. Please check your API key and try again.",
+    };
+  }
+}
+
+export async function solveQuestionAction(question: string, subject: string) {
+  try {
+    const result = await solveQuestion({ question, subject });
+    return { success: true, data: result.solution };
+  } catch (error) {
+    console.error("Error in solveQuestionAction:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred while solving the question.",
     };
   }
 }

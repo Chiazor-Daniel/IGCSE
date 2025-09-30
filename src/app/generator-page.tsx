@@ -21,12 +21,14 @@ export default function GeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [questions, setQuestions] = useState<GenerateIgcseQuestionsOutput['questions'] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [subject, setSubject] = useState<FormSchema['subject']>('Physics');
   const { toast } = useToast();
 
   const handleGenerate = async (values: FormSchema) => {
     setIsLoading(true);
     setError(null);
     setQuestions(null);
+    setSubject(values.subject);
 
     const result = await generateQuestionsAction(values);
 
@@ -59,6 +61,7 @@ export default function GeneratorPage() {
           questions={questions}
           isLoading={isLoading}
           error={error}
+          subject={subject}
         />
       </SidebarInset>
     </SidebarProvider>
