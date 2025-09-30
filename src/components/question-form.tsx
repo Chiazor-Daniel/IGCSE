@@ -33,6 +33,7 @@ export function QuestionForm({ onGenerate, isLoading }: QuestionFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       subject: "Physics",
+      targetYear: undefined,
     },
   });
 
@@ -77,6 +78,7 @@ export function QuestionForm({ onGenerate, isLoading }: QuestionFormProps) {
                   type="number"
                   placeholder="e.g., 2026"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => {
                     const year = e.target.value ? parseInt(e.target.value) : undefined;
                     field.onChange(year);
