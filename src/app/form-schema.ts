@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const formSchema = z.object({
   subject: z.enum(["Mathematics", "Biology", "Physics", "Chemistry"]),
-  questionType: z.enum(["MCQ", "Theory"]),
+  targetYear: z.number().optional(),
 });
 
 export type FormSchema = z.infer<typeof formSchema>;

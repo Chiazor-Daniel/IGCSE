@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { formSchema, type FormSchema } from "@/app/form-schema";
+import { Input } from "./ui/input";
 
 type QuestionFormProps = {
   onGenerate: (values: FormSchema) => void;
@@ -32,7 +33,6 @@ export function QuestionForm({ onGenerate, isLoading }: QuestionFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       subject: "Physics",
-      questionType: "MCQ",
     },
   });
 
@@ -68,21 +68,21 @@ export function QuestionForm({ onGenerate, isLoading }: QuestionFormProps) {
         />
         <FormField
           control={form.control}
-          name="questionType"
+          name="targetYear"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Question Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select question type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="MCQ">MCQ</SelectItem>
-                  <SelectItem value="Theory">Theory</SelectItem>
-                </SelectContent>
-              </Select>
+              <FormLabel>Target Year (Optional)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="e.g., 2026"
+                  {...field}
+                  onChange={(e) => {
+                    const year = e.target.value ? parseInt(e.target.value) : undefined;
+                    field.onChange(year);
+                  }}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
