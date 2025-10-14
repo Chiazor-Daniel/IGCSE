@@ -147,10 +147,18 @@ const MCQQuestion = ({
   onAnswerSelect: (questionIndex: number, answer: string) => void;
   selectedAnswer?: string;
 }) => {
-  const parts = question.questionText.split('\n');
-  const questionText = parts[0];
-  const options = parts.slice(1).filter(o => o.trim() !== '');
+  const mcqRegex = /^(.*?)(\sA\.\s.*?)(\sB\.\s.*?)(\sC\.\s.*?)(\sD\.\s.*?)$/s;
+  const simpleSplitRegex = /\n(A\.|B\.|C\.|D\.)/;
   
+  let questionText = question.questionText;
+  let options: string[] = [];
+
+  const parts = question.questionText.split(simpleSplitRegex);
+  if (parts.length > 1) {
+    questionText = parts[0];
+    options = question.questionText.substring(questionText.length).trim().split('\n').filter(o => o.trim() !== '');
+  }
+
   return (
     <div className="rounded-md border bg-secondary/50 p-4">
       <p className="font-code whitespace-pre-wrap text-sm text-secondary-foreground mb-4">
@@ -297,7 +305,8 @@ export function QuestionDisplay({
     const mcqQuestions = questions.filter(q => q.questionType === 'MCQ');
     let correctAnswers = 0;
     mcqQuestions.forEach((q, index) => {
-      const correctAnswerLetter = q.questionText.split('\n').find(o => o.includes('*'))?.[0];
+      const correctAnswerLine = q.questionText.split('\n').find(o => o.includes('*'));
+      const correctAnswerLetter = correctAnswerLine ? correctAnswerLine[0] : null;
       if (selectedAnswers[index] === correctAnswerLetter) {
         correctAnswers++;
       }

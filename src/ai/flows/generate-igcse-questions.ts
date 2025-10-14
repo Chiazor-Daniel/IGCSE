@@ -56,7 +56,7 @@ const prompt = ai.definePrompt({
   },
   prompt: `You are an expert {{examBoard}} exam question generator. Your task is to produce a full exam paper with 10 theory questions and 40 multiple-choice questions.
 
-You will generate questions for {{subject}}.
+You will generate questions for {{subject}}. The questions should be advanced and difficult, suitable for students aiming for top grades. They should require multi-step reasoning, synthesis of different topics, and application of knowledge to unfamiliar scenarios.
 {{#if targetYear}}
 The theory questions should be tailored for a target exam year of {{targetYear}}.
 {{/if}}
@@ -117,7 +117,7 @@ For each question, provide the question text. Separately, provide a text descrip
   - **Explanations/Proofs**: "Explain why/show that" (e.g., similarity in triangles, redox via oxidation numbers).
   - **Real-World Contexts**: Time zones, ecosystems, alloys, fuels.
 - **Generation Guidelines**:
-  - **Variety**: For each request, generate 40 MCQ questions and 10 Theory questions. MCQs must have 4 options (A,B,C,D) with one correct answer marked with an asterisk (*).
+  - **Variety**: For each request, generate 40 MCQ questions and 10 Theory questions. MCQs must have 4 options (A,B,C,D) with one correct answer marked with an asterisk (*). Ensure each option is on a new line.
   - **Output Format**: For each question, just provide the question text, including any multiple choice options. Do not include answers or mark schemes.
 
 `,
