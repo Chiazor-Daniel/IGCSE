@@ -6,6 +6,7 @@ import {
   type GenerateIgcseQuestionsInput,
 } from "@/ai/flows/generate-igcse-questions";
 import { solveQuestion } from "@/ai/flows/solve-question";
+import { analyzeStudentAnswer } from "@/ai/flows/analyze-student-answer";
 import type { FormSchema } from "./form-schema";
 
 
@@ -41,6 +42,27 @@ export async function solveQuestionAction(question: string, subject: string) {
     return {
       success: false,
       error: "An unexpected error occurred while solving the question.",
+    };
+  }
+}
+
+export async function analyzeAnswerAction(
+  question: string,
+  studentAnswer: string,
+  subject: string
+) {
+  try {
+    const result = await analyzeStudentAnswer({
+      question,
+      studentAnswer,
+      subject,
+    });
+    return { success: true, data: result.feedback };
+  } catch (error) {
+    console.error("Error in analyzeAnswerAction:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred while analyzing the answer.",
     };
   }
 }

@@ -13,6 +13,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateIgcseQuestionsInputSchema = z.object({
+  examBoard: z.enum(['IGCSE', 'WAEC']).describe('The exam board (IGCSE or WAEC).'),
   subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']).describe('The subject for which to generate questions.'),
   targetYear: z.number().optional().describe('The target exam year for theory questions.'),
 });
@@ -43,6 +44,7 @@ const prompt = ai.definePrompt({
   name: 'generateIgcseQuestionsPrompt',
   input: {
     schema: z.object({
+      examBoard: z.enum(['IGCSE', 'WAEC']),
       subject: z.enum(['Mathematics', 'Biology', 'Physics', 'Chemistry']),
       targetYear: z.number().optional(),
     }),
@@ -52,7 +54,7 @@ const prompt = ai.definePrompt({
       questions: z.array(PromptQuestionSchema),
     }),
   },
-  prompt: `You are an expert IGCSE exam question generator. Your task is to produce a full exam paper with 10 theory questions and 40 multiple-choice questions.
+  prompt: `You are an expert {{examBoard}} exam question generator. Your task is to produce a full exam paper with 10 theory questions and 40 multiple-choice questions.
 
 You will generate questions for {{subject}}.
 {{#if targetYear}}

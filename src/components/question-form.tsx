@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +31,7 @@ export function QuestionForm({ onGenerate, isLoading }: QuestionFormProps) {
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      examBoard: "IGCSE",
       subject: "Physics",
       targetYear: undefined,
     },
@@ -44,6 +44,27 @@ export function QuestionForm({ onGenerate, isLoading }: QuestionFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4">
+        <FormField
+          control={form.control}
+          name="examBoard"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Exam Board</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an exam board" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="IGCSE">IGCSE</SelectItem>
+                  <SelectItem value="WAEC">WAEC</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="subject"
