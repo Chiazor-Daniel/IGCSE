@@ -147,17 +147,7 @@ const MCQQuestion = ({
   onAnswerSelect: (questionIndex: number, answer: string) => void;
   selectedAnswer?: string;
 }) => {
-  const mcqRegex = /^(.*?)(\sA\.\s.*?)(\sB\.\s.*?)(\sC\.\s.*?)(\sD\.\s.*?)$/s;
-  const simpleSplitRegex = /\n(A\.|B\.|C\.|D\.)/;
-  
-  let questionText = question.questionText;
-  let options: string[] = [];
-
-  const parts = question.questionText.split(simpleSplitRegex);
-  if (parts.length > 1) {
-    questionText = parts[0];
-    options = question.questionText.substring(questionText.length).trim().split('\n').filter(o => o.trim() !== '');
-  }
+  const [questionText, ...options] = question.questionText.split(/\n(?=[A-D]\.)/);
 
   return (
     <div className="rounded-md border bg-secondary/50 p-4">
@@ -303,6 +293,8 @@ export function QuestionDisplay({
   const handleSubmitMcq = useCallback(() => {
     if (!questions) return;
     const mcqQuestions = questions.filter(q => q.questionType === 'MCQ');
+    if (mcqQuestions.length === 0) return;
+
     let correctAnswers = 0;
     mcqQuestions.forEach((q, index) => {
       const correctAnswerLine = q.questionText.split('\n').find(o => o.includes('*'));
@@ -339,7 +331,7 @@ export function QuestionDisplay({
             <CardHeader>
               <CardTitle className="font-headline">Multiple Choice Questions</CardTitle>
               <CardDescription>
-                Select your answer for each question below. Click "Submit All Answers" when you're done.
+                Select your answer for each question below.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -352,17 +344,6 @@ export function QuestionDisplay({
                   selectedAnswer={selectedAnswers[index]}
                 />
               ))}
-              <div className="flex justify-end pt-4">
-                <Button onClick={handleSubmitMcq}>Submit All Answers</Button>
-              </div>
-              {score !== null && (
-                <Alert className="mt-4">
-                  <AlertTitle>Your Score</AlertTitle>
-                  <AlertDescription>
-                    You scored <strong>{score.toFixed(0)}%</strong>. Keep practicing!
-                  </AlertDescription>
-                </Alert>
-              )}
             </CardContent>
           </Card>
         )}
@@ -380,6 +361,20 @@ export function QuestionDisplay({
             ))}
           </CardContent>
         </Card>
+        )}
+
+        {mcqQuestions && mcqQuestions.length > 0 && (
+          <div className="mt-8 flex flex-col items-center">
+            <Button onClick={handleSubmitMcq} size="lg">Submit All Answers</Button>
+            {score !== null && (
+              <Alert className="mt-4 max-w-sm">
+                <AlertTitle>Your Final Score</AlertTitle>
+                <AlertDescription>
+                  You scored <strong>{score.toFixed(0)}%</strong> on the multiple choice questions. Keep practicing!
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         )}
       </div>
     );
