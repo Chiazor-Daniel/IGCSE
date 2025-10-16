@@ -1,13 +1,6 @@
 
 "use client";
 
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarInset,
-} from "@/components/ui/sidebar";
 import { QuestionForm } from "@/components/question-form";
 import { QuestionDisplay } from "@/components/question-display";
 import { useState } from "react";
@@ -16,6 +9,7 @@ import { generateQuestionsAction } from "./actions";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import type { GenerateIgcseQuestionsOutput } from "@/ai/flows/generate-igcse-questions";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function GeneratorPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,23 +41,22 @@ export default function GeneratorPage() {
   };
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <Logo />
-        </SidebarHeader>
-        <SidebarContent>
+    <div className="container mx-auto max-w-4xl py-8 px-4">
+      <div className="flex justify-center mb-8">
+        <Logo />
+      </div>
+      <Card className="mb-8">
+        <CardContent className="p-6">
           <QuestionForm onGenerate={handleGenerate} isLoading={isLoading} />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <QuestionDisplay
-          questions={questions}
-          isLoading={isLoading}
-          error={error}
-          subject={subject}
-        />
-      </SidebarInset>
-    </SidebarProvider>
+        </CardContent>
+      </Card>
+
+      <QuestionDisplay
+        questions={questions}
+        isLoading={isLoading}
+        error={error}
+        subject={subject}
+      />
+    </div>
   );
 }

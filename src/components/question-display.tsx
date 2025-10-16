@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Loader2,
@@ -26,7 +25,7 @@ import {
 } from "lucide-react";
 import type { GenerateIgcseQuestionsOutput } from "@/ai/flows/generate-igcse-questions";
 import Image from 'next/image';
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
@@ -42,14 +41,14 @@ type QuestionDisplayProps = {
 };
 
 const LoadingSpinner = () => (
-  <div className="flex flex-1 flex-col items-center justify-center gap-4">
+  <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
     <Loader2 className="size-12 animate-spin text-primary" />
     <p className="text-lg text-muted-foreground">Generating questions...</p>
   </div>
 );
 
 const ErrorDisplay = ({ error }: { error: string }) => (
-  <div className="flex flex-1 items-center justify-center">
+  <div className="flex flex-1 items-center justify-center p-8">
     <Alert variant="destructive" className="max-w-md">
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle>Error</AlertTitle>
@@ -136,24 +135,51 @@ const AiSolutionModal = ({
 
 type SelectedAnswers = { [key: number]: string };
 
-const MCQQuestion = ({ 
-  question, 
-  index, 
+const MCQQuestion = ({
+  question,
+  index,
   onAnswerSelect,
   selectedAnswer,
-}: { 
-  question: GenerateIgcseQuestionsOutput['questions'][0], 
-  index: number, 
+  subject
+}: {
+  question: GenerateIgcseQuestionsOutput['questions'][0],
+  index: number,
   onAnswerSelect: (questionIndex: number, answer: string) => void;
   selectedAnswer?: string;
+  subject: FormSchema['subject'];
 }) => {
-  const [questionText, ...options] = question.questionText.split(/\n(?=[A-D]\.)/);
+  const { questionText, options } = useMemo(() => {
+    const questionRegex = /^(.*?)(\n[A-D]\..*)/s;
+    const match = question.questionText.match(questionRegex);
+    
+    if (!match) {
+      // Fallback for questions without clear options
+      return { questionText: question.questionText, options: [] };
+    }
+
+    const mainQuestion = match[1].trim();
+    const optionsBlock = match[2].trim();
+    
+    // Regex to split options while handling multi-line options
+    const optionRegex = /\n(?=[A-D]\.)/g;
+    const parsedOptions = optionsBlock.split(optionRegex);
+    
+    return { questionText: mainQuestion, options: parsedOptions.map(o => o.trim()) };
+  }, [question.questionText]);
 
   return (
     <div className="rounded-md border bg-secondary/50 p-4">
-      <p className="font-code whitespace-pre-wrap text-sm text-secondary-foreground mb-4">
-        <strong>{`Q${index + 1}: `}</strong>{questionText}
-      </p>
+      <div className="flex justify-between items-start mb-4">
+        <p className="font-code whitespace-pre-wrap text-sm text-secondary-foreground flex-1">
+          <strong>{`Q${index + 1}: `}</strong>{questionText}
+        </p>
+        <AiSolutionModal question={question.questionText} subject={subject}>
+            <Button size="sm" variant="ghost" className="ml-4">
+              <Sparkles className="mr-2"/> AI Solve
+            </Button>
+        </AiSolutionModal>
+      </div>
+
       {question.diagramUrl && (
          <div className="mt-4 overflow-hidden rounded-md mb-4">
             <Image
@@ -165,22 +191,24 @@ const MCQQuestion = ({
             />
          </div>
       )}
-      <RadioGroup 
-        onValueChange={(value) => onAnswerSelect(index, value)}
-        value={selectedAnswer}
-        className="space-y-2"
-      >
-        {options.map((option, i) => (
-          <div key={i} className="flex items-center space-x-2">
-            <RadioGroupItem value={option[0]} id={`q${index}-option-${i}`} />
-            <Label htmlFor={`q${index}-option-${i}`} className="font-code text-sm">{option.replace('*', '')}</Label>
-          </div>
-        ))}
-      </RadioGroup>
+      
+      {options.length > 0 ? (
+        <RadioGroup
+          onValueChange={(value) => onAnswerSelect(index, value)}
+          value={selectedAnswer}
+          className="space-y-2"
+        >
+          {options.map((option, i) => (
+            <div key={i} className="flex items-center space-x-2">
+              <RadioGroupItem value={option[0]} id={`q${index}-option-${i}`} />
+              <Label htmlFor={`q${index}-option-${i}`} className="font-code text-sm">{option.replace('*', '')}</Label>
+            </div>
+          ))}
+        </RadioGroup>
+      ) : <p className="text-sm text-muted-foreground italic">This question could not be parsed as a multiple-choice question.</p>}
     </div>
   );
 };
-
 
 const TheoryQuestion = ({ question, index, subject }: { question: GenerateIgcseQuestionsOutput['questions'][0], index: number, subject: FormSchema['subject'] }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -242,7 +270,7 @@ const TheoryQuestion = ({ question, index, subject }: { question: GenerateIgcseQ
       <div className="mt-4 flex gap-2">
         <AiSolutionModal question={question.questionText} subject={subject}>
           <Button size="sm" variant="outline">
-            <Sparkles /> AI Solve
+            <Sparkles className="mr-2" /> AI Solve
           </Button>
         </AiSolutionModal>
         <input
@@ -253,7 +281,7 @@ const TheoryQuestion = ({ question, index, subject }: { question: GenerateIgcseQ
           accept="image/*"
         />
         <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isAnalyzing}>
-          {isAnalyzing ? <Loader2 className="animate-spin" /> : <Upload />}
+          {isAnalyzing ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
            Upload Solution
         </Button>
       </div>
@@ -288,6 +316,7 @@ export function QuestionDisplay({
 
   const handleAnswerSelect = (questionIndex: number, answer: string) => {
     setSelectedAnswers(prev => ({ ...prev, [questionIndex]: answer }));
+    setScore(null); // Reset score when a new answer is selected
   };
 
   const handleSubmitMcq = useCallback(() => {
@@ -325,7 +354,7 @@ export function QuestionDisplay({
 
   if (questions) {
     return (
-      <div className="container mx-auto max-w-4xl py-8">
+      <div>
         {mcqQuestions && mcqQuestions.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
@@ -342,13 +371,14 @@ export function QuestionDisplay({
                   index={index} 
                   onAnswerSelect={handleAnswerSelect}
                   selectedAnswer={selectedAnswers[index]}
+                  subject={subject}
                 />
               ))}
             </CardContent>
           </Card>
         )}
         {theoryQuestions && theoryQuestions.length > 0 && (
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle className="font-headline">Theory Questions</CardTitle>
             <CardDescription>
@@ -367,8 +397,8 @@ export function QuestionDisplay({
           <div className="mt-8 flex flex-col items-center">
             <Button onClick={handleSubmitMcq} size="lg">Submit All Answers</Button>
             {score !== null && (
-              <Alert className="mt-4 max-w-sm">
-                <AlertTitle>Your Final Score</AlertTitle>
+              <Alert className="mt-4 max-w-sm text-center">
+                <AlertTitle className="text-center">Your Final Score</AlertTitle>
                 <AlertDescription>
                   You scored <strong>{score.toFixed(0)}%</strong> on the multiple choice questions. Keep practicing!
                 </AlertDescription>
