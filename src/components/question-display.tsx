@@ -149,22 +149,44 @@ const MCQQuestion = ({
   subject: FormSchema['subject'];
 }) => {
   const { questionText, options } = useMemo(() => {
-    const questionRegex = /^(.*?)(\n[A-D]\..*)/s;
-    const match = question.questionText.match(questionRegex);
+    let text = question.questionText;
+    
+    // Remove "Q1:", "Q2:", etc. prefix if present
+    text = text.replace(/^Q\d+:\s*/i, '');
+    
+    // Try to match options with both formats: A) or A. or A)
+    const questionRegex = /^(.*?)(\n[A-D][\.\)]\s+.*)$/s;
+    const match = text.match(questionRegex);
     
     if (!match) {
-      // Fallback for questions without clear options
-      return { questionText: question.questionText, options: [] };
+      // Fallback: try without requiring newline before options
+      const fallbackRegex = /(.*?)([A-D][\.\)]\s+.*)$/s;
+      const fallbackMatch = text.match(fallbackRegex);
+      if (fallbackMatch) {
+        const mainQuestion = fallbackMatch[1].trim();
+        const optionsBlock = fallbackMatch[2].trim();
+        // Split by both A) and A. formats
+        const optionRegex = /\s*(?=[A-D][\.\)]\s+)/g;
+        const parsedOptions = optionsBlock.split(optionRegex).filter(o => o.trim());
+        return { questionText: mainQuestion, options: parsedOptions.map(o => o.trim()) };
+      }
+      return { questionText: text, options: [] };
     }
 
     const mainQuestion = match[1].trim();
     const optionsBlock = match[2].trim();
     
-    // Regex to split options while handling multi-line options
-    const optionRegex = /\n(?=[A-D]\.)/g;
-    const parsedOptions = optionsBlock.split(optionRegex);
+    // Split options by both A) and A. formats, handling newlines
+    const optionRegex = /\n(?=[A-D][\.\)]\s+)/g;
+    let parsedOptions = optionsBlock.split(optionRegex);
     
-    return { questionText: mainQuestion, options: parsedOptions.map(o => o.trim()) };
+    // If that didn't work, try splitting by pattern that matches both formats
+    if (parsedOptions.length < 4) {
+      // Try more flexible splitting
+      parsedOptions = optionsBlock.split(/(?=[A-D][\.\)]\s+)/g).filter(o => o.trim());
+    }
+    
+    return { questionText: mainQuestion, options: parsedOptions.map(o => o.trim()).filter(o => o.length > 0) };
   }, [question.questionText]);
 
   return (
@@ -198,12 +220,20 @@ const MCQQuestion = ({
           value={selectedAnswer}
           className="space-y-2"
         >
-          {options.map((option, i) => (
-            <div key={i} className="flex items-center space-x-2">
-              <RadioGroupItem value={option[0]} id={`q${index}-option-${i}`} />
-              <Label htmlFor={`q${index}-option-${i}`} className="font-code text-sm">{option.replace('*', '')}</Label>
-            </div>
-          ))}
+          {options.map((option, i) => {
+            // Extract the letter (A, B, C, or D) from the option text
+            const letterMatch = option.trim().match(/^([A-D])[\.\)]/);
+            const letter = letterMatch ? letterMatch[1] : option[0];
+            // Remove asterisk and clean up the option text for display
+            const displayText = option.replace(/\*/g, '').trim();
+            
+            return (
+              <div key={i} className="flex items-center space-x-2">
+                <RadioGroupItem value={letter} id={`q${index}-option-${i}`} />
+                <Label htmlFor={`q${index}-option-${i}`} className="font-code text-sm">{displayText}</Label>
+              </div>
+            );
+          })}
         </RadioGroup>
       ) : <p className="text-sm text-muted-foreground italic">This question could not be parsed as a multiple-choice question.</p>}
     </div>
@@ -326,8 +356,14 @@ export function QuestionDisplay({
 
     let correctAnswers = 0;
     mcqQuestions.forEach((q, index) => {
+      // Find the line with the asterisk (correct answer)
       const correctAnswerLine = q.questionText.split('\n').find(o => o.includes('*'));
-      const correctAnswerLetter = correctAnswerLine ? correctAnswerLine[0] : null;
+      if (!correctAnswerLine) return;
+      
+      // Extract the letter (A, B, C, or D) from the option pattern [A-D][.)]
+      const letterMatch = correctAnswerLine.trim().match(/^([A-D])[\.\)]/);
+      const correctAnswerLetter = letterMatch ? letterMatch[1] : correctAnswerLine.trim()[0];
+      
       if (selectedAnswers[index] === correctAnswerLetter) {
         correctAnswers++;
       }
